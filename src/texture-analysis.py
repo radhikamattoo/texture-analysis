@@ -20,6 +20,9 @@ import matplotlib.pyplot as plt
 import scipy
 import dicom
 
+RHO = 2
+SIGMA = 4
+
 def collect_data(data_path):
     print "collecting data"
     files = []  # create an empty list
@@ -58,7 +61,78 @@ def collect_data(data_path):
         # store the raw image data
         dcm[:, :, files.index(filename)] = ds.pixel_array
     return dcm, origins, pixel_spacings, orientation
+def partition_data(data):
+    print "partitioning data"
+    # variables for separating data into subvolumes
+    voxelSpread = RHO + SIGMA
+    subvolumeSize = voxelSpread ** 3
+    numSlicesPerVolume = subvolumeSize/voxelSpread
+
+    rows, cols, slices = data.shape
+    subvolumes = []
+    # FIXME
+    it = np.nditer(data, flags=['multi_index'])
+    for slice in range(0,slices, numSlicesPerVolume):
+        for row in range(0,rows):
+            for col in range(0, cols,RHO): #Rho is region size
+                # val = data[row,col,slice]
+                subvolume_coordinates = find_subvolume_coordinates([row,col,slice], voxelSpread,subvolumeSize,numSlicesPerVolume, data.shape)
+                subvolumes.push(subvolume_coordinates)
+    return subvolumes
+
+def find_subvolume_coordinates(currentIdx, voxelSpread, subvolumeSize, numSlicesPerVolume, dataShape):
+    coordinates = [currendIdx]
+    # FIXME
+    # rowLength, colLength, sliceLength = dataShape
+    # # correct for off-by-one errors
+    # rowLength -=1
+    # colLength -= 1
+    # sliceLength -= 1
+    # center_x, center_y, center_z = currentIdx
+    #
+    # # Left edge
+    # if center_y == 0:
+    #     if center_x == 0:
+    #         print "top left corner"
+    #         for slice in range(center_z,(center_z + numSlicesPerVolume)):
+    #
+    #     else if center_x == rowLength:
+    #         print "bottom left corner"
+    #     else:
+    #         print "generic left side cell"
+    #
+    # # Right edge
+    # # Bottom edge
+    # # Top edge
+    return []
+
+def first_order_statistics(data):
+    print "computing first order statistics"
+    maximum = np.max(data)
+    pixelCount = np.zeros((maximum+1), dtype=np.int32) #prevent off-by-1
+
+    # iterate through data and count number of unique pixel values
+    it = np.nditer(data, flags=['multi_index'])
+    while not it.finished:
+        x,y,z = it.multi_index
+        value = data[x,y,z]
+        pixelCount[value] += 1
+        it.iternext()
+    # compute probability of an intensity being in a subvolume
+    subvolumeSize = np.square((RHO+SIGMA))
+    histogram = np.empty((maximum+1), dtype=np.float32)
+
+    count = 0
+    for pixel in pixelCount:
+        probability = pixel/subvolumeSize
+        histogram[count] = probability
+        count += 1
+    print histogram
+    return histogram
 
 if __name__ == '__main__':
     path = "data/"
-    data = collect_data(path)
+    data, origins, pixel_spacings, orientation = collect_data(path)
+    partitions = partition_data(data)
+    for subvolume in partition:
+        first_order_statistics(subvolume)
