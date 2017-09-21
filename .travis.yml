@@ -6,33 +6,12 @@
 # script: src/texture-analysis.py
 
 language: python
+os: linux
 python:
-- '2.7'
-os: osx
-cache: pip
-before_install:
-- which python
-- brew install python --universal --framework
-- brew install wget
-- which python
-- export VERSIONER_PYTHON_PREFER_32_BIT=yes
-- defaults write com.apple.versioner.python Prefer-32-Bit -bool yes
-- which python
-- python --version
-# https://github.com/Homebrew/homebrew/issues/34470
-#- arch -i386 brew install wxpython --universal
-- mkdir dl
-- cd dl
-- wget http://downloads.sourceforge.net/wxpython/wxPython3.0-osx-3.0.2.0-cocoa-py2.7.dmg
-- ls
-- cd ..
-- sudo ./packages.sh
-- arch -i386 python -c "import wx; print wx.__version__"
-- arch -i386 pip install pyinstaller
-- arch -i386 pyinstaller --noconsole --onefile hw.py
-- ls
-- hdiutil create dist/hw.dmg -srcfolder dist/ -ov
-- zip -r dist/hw.zip dist/hw.app
-- ls dist/
-install: pip install -r requirements.txt
+  - "2.7"
+# command to install dependencies
+install:
+  - pip install .
+  - pip install -r requirements.txt
+# command to run tests
 script: src/texture-analysis.py
